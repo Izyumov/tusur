@@ -1,0 +1,1303 @@
+#импорт библиотеки графического интерфейса по синониму
+import tkinter as tk
+#импорт всех функций
+from tkinter import *
+#импорт из библиотеки графического интерфейса отдельной функции
+from tkinter import ttk
+#подключение библиотеки для работы с базами данных
+import sqlite3
+#импорт библиотеки ctypes, которая
+#предоставляет C-совместимые типы данных и позволяет вызывать функции из DLL или разделяемых библиотек
+import ctypes
+
+
+#создание класса основного окна приложения
+class Main(tk.Frame):
+    #конструктор класса
+    def __init__(self, root):
+        super().__init__(root)
+        self.init_main()
+        self.db = db
+    #создание интерфейса главного окна приложения
+    def init_main(self):
+        #задание панели управления с определенным цветом и шириной бордюра
+        #панель создается как дочерний элемент родительской формы Frame
+        toolbar = tk.Frame(bg='#d7d8e0', bd=2)
+        #определение места расположения созданной панели - верх, с заполнением всей области
+        toolbar.pack(side=tk.TOP, fill=tk.X)
+
+        self.add_img = tk.PhotoImage(file='add.gif')
+        #создание кнопки "Таблица студентов" на родительской панели, с подписью, выполняющей команду open_dialog
+        #цветом #d7d8e0' с бордюром 1 выровненной по верхней границе панели и с изображением, загруженным в add_img
+        btn_open_dialog = tk.Button(toolbar, text='Студенты', command=self.open_dialog, bg='#d7d8e0', bd=1,
+                                    compound=tk.TOP, image=self.add_img, width=70)
+        btn_open_dialog.pack(side=tk.LEFT)
+
+        self.add_img2 = tk.PhotoImage(file='pred.gif')
+        btn_open_dialog2 = tk.Button(toolbar, text='Предметы', command=self.open_dialog_pred, bg='#d7d8e0', bd=1,
+                                    compound=tk.TOP, image=self.add_img2, width=70)
+        btn_open_dialog2.pack(side=tk.LEFT)
+
+        self.add_img3 = tk.PhotoImage(file='rate.gif')
+        btn_open_dialog2 = tk.Button(toolbar, text='Рейтинг', command=self.open_dialog_rate, bg='#d7d8e0', bd=1,
+                                    compound=tk.TOP, image=self.add_img3, width=70)
+        btn_open_dialog2.pack(side=tk.LEFT)
+
+        self.add_img4 = tk.PhotoImage(file='fac.gif')
+        btn_open_dialog2 = tk.Button(toolbar, text='Факультеты', command=self.open_dialog_fac, bg='#d7d8e0', bd=1,
+                                    compound=tk.TOP, image=self.add_img4, width=70)
+        btn_open_dialog2.pack(side=tk.LEFT)
+
+        self.add_img5 = tk.PhotoImage(file='prep.gif')
+        btn_open_dialog2 = tk.Button(toolbar, text='Преподаватели', command=self.open_dialog_prep, bg='#d7d8e0', bd=1,
+                                    compound=tk.TOP, image=self.add_img5, width=100)
+        btn_open_dialog2.pack(side=tk.LEFT)
+
+        self.add_img6 = tk.PhotoImage(file='gr.gif')
+        btn_open_dialog2 = tk.Button(toolbar, text='Группы', command=self.open_dialog_grup, bg='#d7d8e0', bd=1,
+                                    compound=tk.TOP, image=self.add_img6, width=50)
+        btn_open_dialog2.pack(side=tk.LEFT)
+
+        #содание фонового изображения с размещением внизу
+        self.back_img = tk.PhotoImage(file='logo.gif')
+        panel = Label(root, image = self.back_img)
+        panel.pack(side = "bottom", fill = "both", expand = "yes")
+
+    #функция добавления в таблицу студента и перерисовки таблицы с результатом
+    def insert_stud(frame, std_name, std_adress, std_addition, std_kurs, grup_id):
+        db.insert_data_stud(std_name, std_adress, std_addition, std_kurs, grup_id)
+        Main.view_records(frame)
+    
+    #функция изменения студента и перерисовки таблицы с результатом    
+    def update_stud(frame, std_name, std_adress, std_addition, std_kurs, grup_id):
+        db.c.execute('''UPDATE students SET std_name=?, std_adress=?, std_addition=?, std_kurs=?, grup_id=? WHERE std_id=?''',
+                          (std_name, std_adress, std_addition, std_kurs, grup_id, frame.tree.set(frame.tree.selection(), '#1')))
+        db.conn.commit()
+        Main.view_records(frame)
+
+    #функция удаления студента и перерисовки таблицы с результатом
+    def delete_stud(frame, num_sel_string):
+        db.c.execute('''DELETE FROM students WHERE std_id=?''',
+                          (num_sel_string,))
+        db.conn.commit()
+        Main.view_records(frame)
+
+    #функция перерисовки таблицы с результатом для таблицы students
+    def view_records(frame):
+        db.c.execute('''SELECT * FROM students''')
+        [frame.tree.delete(i) for i in frame.tree.get_children()]
+        [frame.tree.insert('', 'end', values=row) for row in db.c.fetchall()]
+    
+    #функция перерисовки таблицы с результатом для таблицы predmets
+    def view_records_pred(frame):
+        db.c.execute('''SELECT * FROM predmets''')
+        [frame.tree.delete(i) for i in frame.tree.get_children()]
+        [frame.tree.insert('', 'end', values=row) for row in db.c.fetchall()]
+
+    #функция добавления предмета
+    def insert_pred(frame, pred_name, pred_kurs):
+        db.insert_data_pred(pred_name, pred_kurs)
+        Main.view_records_pred(frame)
+
+    #функция изменения предмета    
+    def update_pred(frame, pred_name, pred_kurs):
+        db.c.execute('''UPDATE predmets SET pred_name=?, pred_kurs=? WHERE pred_id=?''',
+                          (pred_name, pred_kurs, frame.tree.set(frame.tree.selection(), '#1')))
+        db.conn.commit()
+        Main.view_records_pred(frame)
+
+    #функция удаления предмета
+    def delete_pred(frame, num_sel_string):
+        #перед удалением проверим целостность, уточнив, не используется ли позиция в других таблицах
+        db.c.execute('''SELECT * FROM rate WHERE pred_id LIKE ?''', (num_sel_string,))
+        result = []
+        for row in db.c.fetchall():
+            result.append(row[0])
+
+        if not result: 
+                db.c.execute('''DELETE FROM predmets WHERE pred_id=?''',
+                   (num_sel_string,))
+                db.conn.commit()
+        else:
+              ctypes.windll.user32.MessageBoxW(0, "Нельзя удалять позицию {name} - нарушается целостность базы".format(name=num_sel_string), "Ошибка", 1)
+
+        Main.view_records_pred(frame)
+
+#---
+    #функция перерисовки таблицы с результатом для таблицы faculty
+    def view_records_fac(frame):
+        db.c.execute('''SELECT * FROM faculty''')
+        [frame.tree.delete(i) for i in frame.tree.get_children()]
+        [frame.tree.insert('', 'end', values=row) for row in db.c.fetchall()]
+
+    #функция добавления факультета
+    def insert_fac(frame, fac_name):
+        db.insert_data_fac(str(fac_name))
+        Main.view_records_fac(frame)
+
+    #функция изменения факультета    
+    def update_fac(frame, fac_name):
+        db.c.execute('''UPDATE faculty SET fac_name=? WHERE fac_id=?''',
+                          (fac_name, frame.tree.set(frame.tree.selection(), '#1')))
+        db.conn.commit()
+        Main.view_records_fac(frame)
+
+    #функция удаления факультета
+    def delete_fac(frame, num_sel_string):
+        #перед удалением проверим целостность, уточнив, не используется ли позиция в других таблицах
+        db.c.execute('''SELECT * FROM prepods WHERE fac_id LIKE ?''', (num_sel_string,))
+        result = []
+        for row in db.c.fetchall():
+            result.append(row[0])
+        
+        db.c.execute('''SELECT * FROM grups WHERE fac_id LIKE ?''', (num_sel_string,))
+        result2 = []
+        for row in db.c.fetchall():
+            result2.append(row[0])
+        if not (result or result2): 
+           db.c.execute('''DELETE FROM faculty WHERE fac_id=?''',
+                       (num_sel_string,))
+           db.conn.commit()
+        else:
+              ctypes.windll.user32.MessageBoxW(0, "Нельзя удалять позицию {name} - нарушается целостность базы".format(name=num_sel_string), "Ошибка", 1)
+
+        Main.view_records_fac(frame)
+#---
+#---
+    #функция перерисовки таблицы с результатом для таблицы grups
+    def view_records_grup(frame):
+        db.c.execute('''SELECT grup_id, date_create, t2.fac_name AS fac_name FROM grups, faculty t2 WHERE grups.fac_id = t2.fac_id''')
+        [frame.tree.delete(i) for i in frame.tree.get_children()]
+        [frame.tree.insert('', 'end', values=row) for row in db.c.fetchall()]
+
+    #функция добавления группы
+    def insert_grup(frame, date_create, fac_name):
+        #сначала надо получить fac_id соответствующий выбранному в списке значению
+        db.c.execute('''SELECT fac_id FROM faculty WHERE fac_name=?''',(fac_name,))
+        #т.к. результат выполнения запроса - таблица значений, получим это значение
+        result_prep_id = []
+        for row in db.c.fetchall():
+            result_prep_id.append(row[0])
+        #конвертируем тип значения в string, чтобы можно было передать в запрос
+        result_grup_id1=''.join(str(e) for e in result_prep_id)
+        db.insert_data_grup(date_create, result_grup_id1)
+        Main.view_records_grup(frame)
+
+    #функция изменения группы   
+    def update_grup(frame, date_create, fac_name):
+         #сначала надо получить fac_id соответствующий выбранному в списке значению
+        db.c.execute('''SELECT fac_id FROM faculty WHERE fac_name=?''',(fac_name,))
+        #т.к. результат выполнения запроса - таблица значений, получим это значение
+        result_prep_id = []
+        for row in db.c.fetchall():
+            result_prep_id.append(row[0])
+        #конвертируем тип значения в string, чтобы можно было передать в запрос
+        result_grup_id1=''.join(str(e) for e in result_prep_id)       
+        db.c.execute('''UPDATE grups SET date_create=?, fac_id=? WHERE grup_id=?''',
+                          (date_create, result_grup_id1, frame.tree.set(frame.tree.selection(), '#1')))
+        db.conn.commit()
+        Main.view_records_grup(frame)
+
+    #функция удаления группы
+    def delete_grup(frame, num_sel_string):
+        #перед удалением проверим целостность, уточнив, не используется ли позиция в других таблицах
+        db.c.execute('''SELECT * FROM students WHERE grup_id LIKE ?''', (num_sel_string,))
+        result = []
+        for row in db.c.fetchall():
+            result.append(row[0])
+
+        if not result: 
+                db.c.execute('''DELETE FROM grups WHERE grup_id=?''',
+                          (num_sel_string,))
+                db.conn.commit()
+        else:
+              ctypes.windll.user32.MessageBoxW(0, "Нельзя удалять позицию {name} - нарушается целостность базы".format(name=num_sel_string), "Ошибка", 1)
+
+        Main.view_records_grup(frame)
+#---
+    #функция перерисовки таблицы с результатом для таблицы prepods
+    def view_records_prep(frame):
+        #db.c.execute('''SELECT * FROM prepods''')
+        db.c.execute('''SELECT prep_id, prep_name, prep_adress, prep_persinf, prep_inn, t2.fac_name AS fac_name FROM prepods, faculty t2 WHERE prepods.fac_id = t2.fac_id''')
+        [frame.tree.delete(i) for i in frame.tree.get_children()]
+        [frame.tree.insert('', 'end', values=row) for row in db.c.fetchall()]
+
+    #функция добавления преподавателя
+    def insert_prep(frame, prep_name, prep_adress, prep_persinf, prep_inn, fac_name):
+        #сначала надо получить fac_id соответствующий выбранному в списке значению
+        db.c.execute('''SELECT fac_id FROM faculty WHERE fac_name=?''',(fac_name,))
+        #т.к. результат выполнения запроса - таблица значений, получим это значение
+        result_prep_id = []
+        for row in db.c.fetchall():
+            result_prep_id.append(row[0])
+        #конвертируем тип значения в string, чтобы можно было передать в запрос
+        result_prep_id1=''.join(str(e) for e in result_prep_id)
+        db.insert_data_prep(prep_name, prep_adress, prep_persinf, prep_inn, result_prep_id1)
+        Main.view_records_prep(frame)
+
+    #функция изменения преподавателя   
+    def update_prep(frame, prep_name, prep_adress, prep_persinf, prep_inn, fac_name):
+         #сначала надо получить fac_id соответствующий выбранному в списке значению
+        db.c.execute('''SELECT fac_id FROM faculty WHERE fac_name=?''',(fac_name,))
+        #т.к. результат выполнения запроса - таблица значений, получим это значение
+        result_prep_id = []
+        for row in db.c.fetchall():
+            result_prep_id.append(row[0])
+        #конвертируем тип значения в string, чтобы можно было передать в запрос
+        result_prep_id1=''.join(str(e) for e in result_prep_id)       
+        db.c.execute('''UPDATE prepods SET prep_name=?, prep_adress=?, prep_persinf=?, prep_inn=?, fac_id=? WHERE prep_id=?''',
+                          (prep_name, prep_adress, prep_persinf, prep_inn, result_prep_id1, frame.tree.set(frame.tree.selection(), '#1')))
+        db.conn.commit()
+        Main.view_records_prep(frame)
+
+    #функция удаления преподавателя
+    def delete_prep(frame, num_sel_string):
+        db.c.execute('''DELETE FROM prepods WHERE prep_id=?''',
+                          (num_sel_string,))
+        db.conn.commit()
+        Main.view_records_prep(frame)
+#---
+    #функция перерисовки таблицы с результатом для таблицы rate
+    def view_records_rate(frame):
+        db.c.execute('''SELECT rate_id, rate_max, rate_fact, t2.std_name AS std_name, t3.pred_name AS pred_name FROM rate, students t2, predmets t3 WHERE rate.std_id = t2.std_id AND rate.pred_id = t3.pred_id''')
+        [frame.tree.delete(i) for i in frame.tree.get_children()]
+        [frame.tree.insert('', 'end', values=row) for row in db.c.fetchall()]
+        pass
+
+    #функция поиска для таблицы students
+    def search_stud(frame, description):
+        description = ('%' + description + '%',)
+        db.c.execute('''SELECT * FROM students WHERE std_name LIKE ?''', description)
+        [frame.tree.delete(i) for i in frame.tree.get_children()]
+        [frame.tree.insert('', 'end', values=row) for row in db.c.fetchall()]
+        pass
+    
+    #функция добавления записи в таблицу rate
+    def insert_rate(frame, rate_max, rate_fact, std_name, pred_name):
+        #сначала надо получить std_id соответствующий выбранному в списке значению
+        db.c.execute('''SELECT std_id FROM students WHERE std_name=?''',(std_name,))
+        #т.к. результат выполнения запроса - таблица значений, получим это значение
+        result_std_id = []
+        for row in db.c.fetchall():
+            result_std_id.append(row[0])
+        #конвертируем тип значения в string, чтобы можно было передать в запрос
+        result_std_id1=''.join(str(e) for e in result_std_id)
+
+        db.c.execute('''SELECT pred_id FROM predmets WHERE pred_name=?''',(pred_name,))
+        result_pred_id = []
+        for row in db.c.fetchall():
+            result_pred_id.append(row[0])
+        result_pred_id1=''.join(str(e) for e in result_pred_id)
+        #передача подготовленных значений в функцию добавления записи
+        db.insert_data_rate(rate_max, rate_fact, result_std_id1, result_pred_id1)
+        Main.view_records_rate(frame)
+
+    #функция изменения записи в таблице rate    
+    def update_rate(frame, rate_max, rate_fact, std_name, pred_name):
+        db.c.execute('''SELECT std_id FROM students WHERE std_name=?''',(std_name,))
+        result_std_id = []
+        for row in db.c.fetchall():
+            result_std_id.append(row[0])
+        result_std_id1=''.join(str(e) for e in result_std_id)
+
+        db.c.execute('''SELECT pred_id FROM predmets WHERE pred_name=?''',(pred_name,))
+        result_pred_id = []
+        for row in db.c.fetchall():
+            result_pred_id.append(row[0])
+        result_pred_id1=''.join(str(e) for e in result_pred_id)
+        db.c.execute('''UPDATE rate SET rate_max=?, rate_fact=?, std_id=?, pred_id=? WHERE rate_id=?''',
+                          (rate_max, rate_fact, str(result_std_id1), str(result_pred_id1), frame.tree.set(frame.tree.selection(), '#1')))
+        db.conn.commit()
+        Main.view_records_rate(frame)
+
+    #функция удаления записи из таблицы rate
+    def delete_rate(frame, num_sel_string):
+        db.c.execute('''DELETE FROM rate WHERE rate_id=?''',
+                          (num_sel_string,))
+        db.conn.commit()
+        Main.view_records_rate(frame)
+
+    #функция подготовки набора значений и заполнения combobox с названиями предметов
+    def change_rate_combo(self):
+        db.c.execute('''SELECT pred_name FROM predmets''')
+        result = []
+        for row in db.c.fetchall():
+            result.append(row[0])
+        self.combo_rate_dis['values'] =result
+
+    #функция подготовки набора значений и заполнения combobox с названиями предметов
+    def change_rate_combo_name(self):
+        db.c.execute('''SELECT std_name FROM students''')
+        result = []
+        for row in db.c.fetchall():
+            result.append(row[0])
+        self.combo_rate_name['values'] =result
+    
+    #функция подготовки набора значений и заполнения combobox с названиями факультетов
+    def change_prep_combo_name(self):
+        db.c.execute('''SELECT fac_name FROM faculty''')
+        result = []
+        for row in db.c.fetchall():
+            result.append(row[0])
+        self.combo_prep_name['values'] =result
+    
+    #функция подготовки набора значений и заполнения combobox с названиями факультетов
+    def change_std_gr_combo_name(self):
+        db.c.execute('''SELECT grup_id FROM grups''')
+        result = []
+        for row in db.c.fetchall():
+            result.append(row[0])
+        self.combo_gr_name['values'] =result
+
+    #функция подготовки набора значений и заполнения combobox с названиями факультетов
+    def change_grup_combo_name(self):
+        db.c.execute('''SELECT fac_name FROM faculty''')
+        result = []
+        for row in db.c.fetchall():
+            result.append(row[0])
+        self.combo_grup_name['values'] =result
+
+    #функция создания окна для поиска значений в таблице students
+    def new_search(frame):
+        #создание формы
+        self = tk.Toplevel(root)
+        #задание заголовка
+        self.title('Поиск')
+        #определение размера окна 300х100 
+        # и смещения при выводе формы относительно левого врехнего угла экрана
+        self.geometry('300x100+200+100')
+        #запрет изменения геометрии окна
+        self.resizable(False, False)
+        #создание метки
+        label_search = tk.Label(self, text='Поиск')
+        #размещение метки относительно левого верхнего угла
+        #Place – это менеджер геометрии, который размещает элементы GUI, используя абсолютное позиционирование.
+        #Pack – это менеджер геометрии, который размещает элементы GUI по горизонтали и вертикали.
+        #Grid – это менеджер геометрии, который размещает элементы GUI в двухмерной сетке
+        label_search.place(x=50, y=20)
+        #создание поля ввода
+        self.entry_search = ttk.Entry(self)
+        self.entry_search.place(x=105, y=20, width=150)
+        #создание кнопки Закрытия
+        btn_cancel = ttk.Button(self, text='Закрыть', command=self.destroy)
+        btn_cancel.place(x=185, y=50)
+        #создание кнопки Поиска
+        btn_search = ttk.Button(self, text='Поиск')
+        btn_search.place(x=105, y=50)
+        #в tkinter с помощью метода bind между собой связываются виджет, событие и действие. 
+        btn_search.bind('<Button-1>', lambda event: Main.search_stud(frame, self.entry_search.get()))
+        btn_search.bind('<Button-1>', lambda event: self.destroy(), add='+')
+
+    #создание формы работы с таблицей students
+    def new_window_stud():
+        self = tk.Toplevel(root)
+        self.title('Таблица students')
+        self.geometry('590x470+200+100')
+        self.resizable(False, False)
+
+        #внутренняя функция перерисовки таблицы
+        def refreshdata():
+            db.c.execute('''SELECT * FROM students''')
+            [self.tree.delete(i) for i in self.tree.get_children()]
+            [self.tree.insert('', 'end', values=row) for row in db.c.fetchall()]
+
+        #создание метки
+        label_id_pos = tk.Label(self, text='Позиция:')
+        #размещение метки в сетке
+        #При размещении виджетов методом grid родительский контейнер (обычно это окно) 
+        # условно разделяется на ячейки подобно таблице. Адрес каждой ячейки состоит из номера 
+        # строки и номера столбца. Нумерация начинается с нуля. Ячейки можно объединять 
+        # как по вертикали, так и по горизонтали.
+        label_id_pos.grid(row=0, column=0,
+                sticky=W, padx=10)
+
+        label_description = tk.Label(self, text='ФИО:')
+        label_description.grid(row=1, column=0,
+                sticky=W, padx=10)
+ 
+        label_select = tk.Label(self, text='Курс:')
+        label_select.grid(row=2, column=0,
+                sticky=W, padx=10)
+
+        label_adres = tk.Label(self, text='Адрес:')
+        label_adres.grid(row=3, column=0,
+                sticky=W, padx=10)
+
+        label_descr = tk.Label(self, text='Примечание:')
+        label_descr.grid(row=4, column=0,
+                sticky=W, padx=10)
+
+        label_gr = tk.Label(self, text='Группа:')
+        label_gr.grid(row=5, column=0,
+                sticky=W, padx=10)
+
+        self.entry_stdsel_pos = ttk.Entry(self)
+        self.entry_stdsel_pos.grid(row=0, column=1,
+                columnspan=4,
+                sticky=W, padx=10)
+
+        self.entry_std_name = ttk.Entry(self)
+        self.entry_std_name.grid(row=1, column=1,
+                columnspan=4,
+                sticky=W, padx=10)
+
+        self.entry_std_adress = ttk.Entry(self)
+        self.entry_std_adress.grid(row=3, column=1,
+                sticky=W, padx=10)
+
+        self.entry_std_addition = ttk.Entry(self)
+        self.entry_std_addition.grid(row=4, column=1,
+                columnspan=4,
+                sticky=W, padx=10)
+        
+        #создание списка с предопределенными значениями
+        self.combobox = ttk.Combobox(self, values=[u'1 курс', u'2 курс', u'3 курс', u'4 курс', u'5 курс', u'1 курс магистр', u'2 курс магистр', u'3 курс магистр'])
+        self.combobox.current(0)
+        self.combobox.grid(row=2, column=1,
+                columnspan=4,
+                sticky=W, padx=10)        
+
+        #создание списка с предопределенными значениями
+        self.combo_gr_name = ttk.Combobox(self)
+        Main.change_std_gr_combo_name(self)
+        self.combo_gr_name.grid(row=5, column=1,
+                columnspan=4,
+                sticky=W, padx=10) 
+
+        btn_cancel = ttk.Button(self, text='Закрыть', command=self.destroy)
+        btn_cancel.grid(row=6, column=5,
+                sticky=W, padx=5, pady=10)  
+
+        #создание кнопки "Добавить"
+        self.btn_ok = ttk.Button(self, text='Добавить')
+        self.btn_ok.grid(row=6, column=1,
+                sticky=W, padx=5, pady=10)   
+        #назначение обработчика для кнопки в виде лямбда события
+        self.btn_ok.bind('<Button-1>', lambda event: Main.insert_stud(self, self.entry_std_name.get(),
+                                                                       self.entry_std_adress.get(),
+                                                                       self.entry_std_addition.get(),
+                                                                       self.combobox.get(),
+                                                                       self.combo_gr_name.get()))
+
+        
+        self.btn_edit = ttk.Button(self, text='Редактировать')
+        self.btn_edit.grid(row=6, column=0,
+                sticky=W, padx=5, pady=10)  
+        self.btn_edit.bind('<Button-1>', lambda event: Main.update_stud(self, self.entry_std_name.get(),
+                                                                         self.entry_std_adress.get(),
+                                                                         self.entry_std_addition.get(),
+                                                                         self.combobox.get(),
+                                                                         self.combo_gr_name.get()))
+
+        self.btn_search = ttk.Button(self, text='Поиск')
+        self.btn_search.grid(row=6, column=2,
+                sticky=W, padx=5, pady=10)  
+        self.btn_search.bind('<Button-1>', lambda event: Main.new_search(self))   
+
+        self.btn_search = ttk.Button(self, text='Обновить')
+        self.btn_search.grid(row=0, column=5,
+                sticky=W, padx=5, pady=10)  
+        self.btn_search.bind('<Button-1>', lambda event: Main.view_records(self))       
+
+        #вывод сетки grid с содержимым таблицы
+        self.tree = ttk.Treeview(self, columns=('std_id', 'std_name', 'std_adress', 'std_addition', 'std_kurs', 'grup_id'), show='headings')
+        #задание размеров и выравнивания данных внутри сетки
+        self.tree.column('std_id', width=20, anchor=tk.CENTER)
+        self.tree.column('std_name', width=135, anchor=tk.CENTER)
+        self.tree.column('std_adress', width=100, anchor=tk.CENTER)
+        self.tree.column('std_addition', width=100, anchor=tk.CENTER)
+        self.tree.column('std_kurs', width=100, anchor=tk.CENTER)
+        self.tree.column('grup_id', width=20, anchor=tk.CENTER)
+        #задание заголовков для сетки
+        self.tree.heading('std_id', text='ID')
+        self.tree.heading('std_name', text='ФИО')
+        self.tree.heading('std_adress', text='Адрес')
+        self.tree.heading('std_addition', text='Примечание')
+        self.tree.heading('std_kurs', text='Курс')
+        self.tree.heading('grup_id', text='Группа')
+        #выравнивание сетки
+        self.tree.grid(row=7, column=0, columnspan=6,
+                sticky='news', padx=5, pady=10)  
+        #задание полосы прокрутки
+        vsb = tk.Scrollbar(self, orient="vertical", command=self.tree.yview)
+        vsb.grid(row=7, column=6, sticky='ns')
+        self.tree.configure(yscrollcommand=vsb.set)
+        
+        #вызов внутренней функции перерисовки таблицы
+        refreshdata()
+
+        #функция выводит значения из табилцы students в соответствующие поля ввода для выбранной позиции в сетке grid
+        # предварительно значения очищаются
+        def selectItem(a):
+            curItem = self.tree.focus()
+            self.entry_std_name.delete(0, END)
+            self.entry_std_name.insert(0, self.tree.set(curItem, 'std_name'))
+            self.entry_std_adress.delete(0, END)
+            self.entry_std_adress.insert(0, self.tree.set(curItem, 'std_adress'))
+            self.entry_std_addition.delete(0, END)
+            self.entry_std_addition.insert(0, self.tree.set(curItem, 'std_addition'))
+            self.combobox.delete(0, END)
+            self.combobox.insert(0, self.tree.set(curItem, 'std_kurs'))
+            self.combo_gr_name.delete(0, END)
+            self.combo_gr_name.insert(0, self.tree.set(curItem, 'grup_id'))
+            self.entry_stdsel_pos.delete(0, END)
+            #для того, чтобы корректно записать значение str_id делаем попытку привести его к int
+            # в случае неудачи выводим системное сообщение (ctypes был нужен для этого)
+            # и ставим значение по умолчанию "1" 
+            try:
+                valtochk = self.tree.set(curItem, 'std_id')
+                int(valtochk)
+                self.entry_stdsel_pos.insert(0, self.tree.set(curItem, 'std_id'))
+            except ValueError:
+                    ctypes.windll.user32.MessageBoxW(0, "Значение номера позиции не является числом", "Ошибка", 1)
+                    self.entry_stdsel_pos.insert(0, 1)
+            
+
+       
+        self.btn_del = ttk.Button(self, text='Удалить')
+        self.btn_del.grid(row=6, column=4,
+                sticky=W, padx=5, pady=10)  
+        self.btn_del.bind('<Button-1>', lambda event: Main.delete_stud(self, self.entry_stdsel_pos.get()))
+        #устанавливаем курсор в сетке на первую позицию
+        try:
+            child_id = self.tree.get_children()[0] # для ссылки на последний элемент в наборе
+            self.tree.focus(child_id)
+            self.tree.selection_set(child_id)
+            selectItem(0)
+        except:
+            ctypes.windll.user32.MessageBoxW(0, "Нет строк в таблице", "Ошибка", 1)
+        #"подвешиваем" функцию определения текущей позиции selectItem на ожидание отпускания кнопки над сеткой grid
+        self.tree.bind('<ButtonRelease-1>', selectItem)
+ #---prepods---
+     #создание формы работы с таблицей students
+    def new_window_prep():
+        self = tk.Toplevel(root)
+        self.title('Таблица prepods')
+        self.geometry('590x430+200+100')
+        self.resizable(False, False)
+
+        #внутренняя функция перерисовки таблицы
+        def refreshdata():
+            #db.c.execute('''SELECT * FROM prepods''')
+            db.c.execute('''SELECT prep_id, prep_name, prep_adress, prep_persinf, prep_inn, t2.fac_name AS fac_name FROM prepods, faculty t2 WHERE prepods.fac_id = t2.fac_id''')
+            [self.tree.delete(i) for i in self.tree.get_children()]
+            [self.tree.insert('', 'end', values=row) for row in db.c.fetchall()]
+
+        #создание метки
+        label_id_pos = tk.Label(self, text='Позиция:')
+        #размещение метки в сетке
+        #При размещении виджетов методом grid родительский контейнер (обычно это окно) 
+        # условно разделяется на ячейки подобно таблице. Адрес каждой ячейки состоит из номера 
+        # строки и номера столбца. Нумерация начинается с нуля. Ячейки можно объединять 
+        # как по вертикали, так и по горизонтали.
+        label_id_pos.grid(row=0, column=0,
+                sticky=W, padx=10)
+
+        label_description = tk.Label(self, text='ФИО:')
+        label_description.grid(row=1, column=0,
+                sticky=W, padx=10)
+
+        label_adres = tk.Label(self, text='Адрес:')
+        label_adres.grid(row=2, column=0,
+        sticky=W, padx=10)
+
+        label_persinf = tk.Label(self, text='Паспорт:')
+        label_persinf.grid(row=3, column=0,
+        sticky=W, padx=10)
+
+        label_inn = tk.Label(self, text='ИНН:')
+        label_inn.grid(row=4, column=0,
+        sticky=W, padx=10)
+
+        label_inn = tk.Label(self, text='Факультет:')
+        label_inn.grid(row=5, column=0,
+        sticky=W, padx=10)
+
+        self.entry_prepsel_pos = ttk.Entry(self)
+        self.entry_prepsel_pos.grid(row=0, column=1,
+                columnspan=4,
+                sticky=W, padx=10)
+
+        self.entry_prep_name = ttk.Entry(self)
+        self.entry_prep_name.grid(row=1, column=1,
+                columnspan=4,
+                sticky=W, padx=10)
+
+        self.entry_prep_adress = ttk.Entry(self)
+        self.entry_prep_adress.grid(row=2, column=1,
+                sticky=W, padx=10)
+
+        self.entry_prep_pers = ttk.Entry(self)
+        self.entry_prep_pers.grid(row=3, column=1,
+                columnspan=4,
+                sticky=W, padx=10)
+        
+        self.entry_prep_inn = ttk.Entry(self)
+        self.entry_prep_inn.grid(row=4, column=1,
+                columnspan=4,
+                sticky=W, padx=10)
+        
+        #создание списка с предопределенными значениями
+        self.combo_prep_name = ttk.Combobox(self)
+        Main.change_prep_combo_name(self)
+        self.combo_prep_name.grid(row=5, column=1,
+                columnspan=4,
+                sticky=W, padx=10)        
+
+        btn_cancel = ttk.Button(self, text='Закрыть', command=self.destroy)
+        btn_cancel.grid(row=6, column=5,
+                sticky=W, padx=5, pady=10)  
+
+        #создание кнопки "Добавить"
+        self.btn_ok = ttk.Button(self, text='Добавить')
+        self.btn_ok.grid(row=6, column=1,
+                sticky=W, padx=5, pady=10)   
+        #назначение обработчика для кнопки в виде лямбда события
+        self.btn_ok.bind('<Button-1>', lambda event: Main.insert_prep(self, self.entry_prep_name.get(),
+                                                                       self.entry_prep_adress.get(),
+                                                                       self.entry_prep_pers.get(),
+                                                                       self.entry_prep_inn.get(),
+                                                                       self.combo_prep_name.get()))
+
+        
+        self.btn_edit = ttk.Button(self, text='Редактировать')
+        self.btn_edit.grid(row=6, column=0,
+                sticky=W, padx=5, pady=10)  
+        self.btn_edit.bind('<Button-1>', lambda event: Main.update_prep(self, self.entry_prep_name.get(),
+                                                                         self.entry_prep_adress.get(),
+                                                                         self.entry_prep_pers.get(),
+                                                                         self.entry_prep_inn.get(),
+                                                                         self.combo_prep_name.get()))
+
+
+        #вывод сетки grid с содержимым таблицы
+        self.tree = ttk.Treeview(self, columns=('prep_id', 'prep_name', 'prep_adress', 'prep_persinf', 'prep_inn', 'fac_id'), show='headings')
+        #задание размеров и выравнивания данных внутри сетки
+        self.tree.column('prep_id', width=20, anchor=tk.CENTER)
+        self.tree.column('prep_name', width=135, anchor=tk.CENTER)
+        self.tree.column('prep_adress', width=100, anchor=tk.CENTER)
+        self.tree.column('prep_persinf', width=100, anchor=tk.CENTER)
+        self.tree.column('prep_inn', width=100, anchor=tk.CENTER)
+        self.tree.column('fac_id', width=100, anchor=tk.CENTER)
+        #задание заголовков для сетки
+        self.tree.heading('prep_id', text='ID')
+        self.tree.heading('prep_name', text='ФИО')
+        self.tree.heading('prep_adress', text='Адрес')
+        self.tree.heading('prep_persinf', text='Паспорт')
+        self.tree.heading('prep_inn', text='ИНН')
+        self.tree.heading('fac_id', text='Факультет')
+        #выравнивание сетки
+        self.tree.grid(row=7, column=0, columnspan=6,
+                sticky='news', padx=5, pady=10)  
+        #задание полосы прокрутки
+        vsb = tk.Scrollbar(self, orient="vertical", command=self.tree.yview)
+        vsb.grid(row=7, column=6, sticky='ns')
+        self.tree.configure(yscrollcommand=vsb.set)
+        
+        #вызов внутренней функции перерисовки таблицы
+        refreshdata()
+
+        #функция выводит значения из табилцы students в соответствующие поля ввода для выбранной позиции в сетке grid
+        # предварительно значения очищаются
+        def selectItem(a):
+            curItem = self.tree.focus()
+            self.entry_prep_name.delete(0, END)
+            self.entry_prep_name.insert(0, self.tree.set(curItem, 'prep_name'))
+            self.entry_prep_adress.delete(0, END)
+            self.entry_prep_adress.insert(0, self.tree.set(curItem, 'prep_adress'))
+            self.entry_prep_pers.delete(0, END)
+            self.entry_prep_pers.insert(0, self.tree.set(curItem, 'prep_persinf'))
+            self.entry_prep_inn.delete(0, END)
+            self.entry_prep_inn.insert(0, self.tree.set(curItem, 'prep_inn'))
+            self.combo_prep_name.delete(0, END)
+            self.combo_prep_name.insert(0, self.tree.set(curItem, 'fac_id'))
+            self.entry_prepsel_pos.delete(0, END)
+            #для того, чтобы корректно записать значение prep_id делаем попытку привести его к int
+            # в случае неудачи выводим системное сообщение (ctypes был нужен для этого)
+            # и ставим значение по умолчанию "1" 
+            try:
+                valtochk = self.tree.set(curItem, 'prep_id')
+                int(valtochk)
+                self.entry_prepsel_pos.insert(0, self.tree.set(curItem, 'prep_id'))
+            except ValueError:
+                    ctypes.windll.user32.MessageBoxW(0, "Значение номера позиции не является числом", "Ошибка", 1)
+                    self.entry_prepsel_pos.insert(0, 1)
+            
+        #устанавливаем курсор в сетке на первую позицию
+        try:
+            child_id = self.tree.get_children()[0] # для ссылки на последний элемент в наборе
+            self.tree.focus(child_id)
+            self.tree.selection_set(child_id)
+            selectItem(0)
+        except:
+            ctypes.windll.user32.MessageBoxW(0, "Нет строк в таблице", "Ошибка", 1)
+       
+        self.btn_del = ttk.Button(self, text='Удалить')
+        self.btn_del.grid(row=6, column=4,
+                sticky=W, padx=5, pady=10)  
+        self.btn_del.bind('<Button-1>', lambda event: Main.delete_prep(self, self.entry_prepsel_pos.get()))
+
+        #"подвешиваем" функцию определения текущей позиции selectItem на ожидание отпускания кнопки над сеткой grid
+        self.tree.bind('<ButtonRelease-1>', selectItem)
+
+        self.focus_set()
+
+ # ---------- 
+    #создание формы для работы таблицей predmets
+    def new_window_pred():
+        self = tk.Toplevel(root)
+        self.title('Таблица predmets')
+        self.geometry('425x370+200+100')
+        self.resizable(False, False)
+
+        def refreshdata():
+            db.c.execute('''SELECT * FROM predmets''')
+            [self.tree.delete(i) for i in self.tree.get_children()]
+            [self.tree.insert('', 'end', values=row) for row in db.c.fetchall()]
+
+        label_id_pos = tk.Label(self, text='Позиция:')
+        label_id_pos.grid(row=0, column=0,
+                sticky=W, padx=10)
+
+        label_description = tk.Label(self, text='Предмет:')
+        label_description.grid(row=1, column=0,
+                sticky=W, padx=10)
+ 
+        label_select = tk.Label(self, text='Курс:')
+        label_select.grid(row=2, column=0,
+                sticky=W, padx=10)
+
+        self.entry_predsel_pos = ttk.Entry(self)
+        self.entry_predsel_pos.grid(row=0, column=1,
+                columnspan=4,
+                sticky=W, padx=10)
+
+        self.entry_pred_name = ttk.Entry(self)
+        self.entry_pred_name.grid(row=1, column=1,
+                columnspan=4,
+                sticky=W, padx=10)
+
+        self.combobox = ttk.Combobox(self, values=[u'1 курс', u'2 курс', u'3 курс', u'4 курс', u'5 курс', u'1 курс магистр', u'2 курс магистр', u'3 курс магистр'])
+        self.combobox.current(0)
+        self.combobox.grid(row=2, column=1,
+                columnspan=4,
+                sticky=W, padx=10)        
+
+        btn_cancel = ttk.Button(self, text='Закрыть', command=self.destroy)
+        btn_cancel.grid(row=5, column=5,
+                sticky=W, padx=5, pady=10)  
+
+        self.btn_ok = ttk.Button(self, text='Добавить')
+        self.btn_ok.grid(row=5, column=1,
+                sticky=W, padx=5, pady=10)   
+        self.btn_ok.bind('<Button-1>', lambda event: Main.insert_pred(self, self.entry_pred_name.get(),
+                                                                       self.combobox.get()))
+
+        
+        self.btn_edit = ttk.Button(self, text='Редактировать')
+        self.btn_edit.grid(row=5, column=0,
+                sticky=W, padx=5, pady=10)  
+        self.btn_edit.bind('<Button-1>', lambda event: Main.update_pred(self, self.entry_pred_name.get(),
+                                                                         self.combobox.get()))
+
+
+        self.tree = ttk.Treeview(self, columns=('pred_id', 'pred_name', 'pred_kurs'), show='headings')
+        self.tree.column('pred_id', width=20, anchor=tk.CENTER)
+        self.tree.column('pred_name', width=235, anchor=tk.CENTER)
+        self.tree.column('pred_kurs', width=100, anchor=tk.CENTER)
+
+        self.tree.heading('pred_id', text='ID')
+        self.tree.heading('pred_name', text='ФИО')
+        self.tree.heading('pred_kurs', text='Курс')
+
+        self.tree.grid(row=6, column=0, columnspan=6,
+                sticky='news', padx=5, pady=10)  
+
+        vsb = tk.Scrollbar(self, orient="vertical", command=self.tree.yview)
+        vsb.grid(row=6, column=6, sticky='ns')
+        self.tree.configure(yscrollcommand=vsb.set)
+      
+        refreshdata()
+
+        def selectItem(a):
+            curItem = self.tree.focus()
+            self.entry_pred_name.delete(0, END)
+            self.entry_pred_name.insert(0, self.tree.set(curItem, 'pred_name'))
+            self.combobox.delete(0, END)
+            self.combobox.insert(0, self.tree.set(curItem, 'pred_kurs'))
+            self.entry_predsel_pos.delete(0, END)
+            
+            try:
+                valtochk = self.tree.set(curItem, 'pred_id')
+                int(valtochk)
+                self.entry_predsel_pos.insert(0, self.tree.set(curItem, 'pred_id'))
+            except ValueError:
+                    ctypes.windll.user32.MessageBoxW(0, "Значение номера позиции не является числом", "Ошибка", 1)
+                    self.entry_predsel_pos.insert(0, 1)
+
+        #устанавливаем курсор в сетке на первую позицию
+        try:
+            child_id = self.tree.get_children()[0] # для ссылки на последний элемент в наборе
+            self.tree.focus(child_id)
+            self.tree.selection_set(child_id)
+            selectItem(0)
+        except:
+            ctypes.windll.user32.MessageBoxW(0, "Нет строк в таблице", "Ошибка", 1)
+
+        self.btn_del = ttk.Button(self, text='Удалить')
+        self.btn_del.grid(row=5, column=4,
+                sticky=W, padx=5, pady=10)  
+ 
+        self.btn_del.bind('<Button-1>', lambda event: Main.delete_pred(self, self.entry_predsel_pos.get()))
+
+        self.tree.bind('<ButtonRelease-1>', selectItem)
+ 
+        self.focus_set()
+
+    #создание формы для работы таблицей rate
+    def new_window_rate():
+        self = tk.Toplevel(root)
+        self.title('Таблица rate')
+        self.geometry('510x410+200+100')
+        self.resizable(False, False)
+ 
+        def refreshdata():
+            db.c.execute('''SELECT rate_id, rate_max, rate_fact, t2.std_name AS std_name, t3.pred_name AS pred_name FROM rate, students t2, predmets t3 WHERE rate.std_id = t2.std_id AND rate.pred_id = t3.pred_id''')
+            [self.tree.delete(i) for i in self.tree.get_children()]
+            [self.tree.insert('', 'end', values=row) for row in db.c.fetchall()]
+
+        label_id_pos = tk.Label(self, text='Позиция:')
+        label_id_pos.grid(row=0, column=0,
+                sticky=W, padx=10)
+
+        label_description = tk.Label(self, text='ФИО:')
+        label_description.grid(row=1, column=0,
+                sticky=W, padx=10)
+ 
+        label_select = tk.Label(self, text='Дисциплина:')
+        label_select.grid(row=2, column=0,
+                sticky=W, padx=10)
+
+        label_adres = tk.Label(self, text='Макс.рейтинг:')
+        label_adres.grid(row=3, column=0,
+                sticky=W, padx=10)
+
+        label_descr = tk.Label(self, text='Текущий рейтинг:')
+        label_descr.grid(row=4, column=0,
+                sticky=W, padx=10)
+
+        self.entry_ratesel_pos = ttk.Entry(self)
+        self.entry_ratesel_pos.grid(row=0, column=1,
+                columnspan=4,
+                sticky=W, padx=10)
+
+        self.combo_rate_name = ttk.Combobox(self)
+        Main.change_rate_combo_name(self)
+        self.combo_rate_name.grid(row=1, column=1,
+                columnspan=4,
+                sticky=W, padx=10)
+
+        self.entry_rate_max = ttk.Entry(self)
+        self.entry_rate_max.grid(row=3, column=1,
+                sticky=W, padx=10)
+
+        self.entry_rate_current = ttk.Entry(self)
+        self.entry_rate_current.grid(row=4, column=1,
+                sticky=W, padx=10)
+
+        self.combo_rate_dis = ttk.Combobox(self)
+        Main.change_rate_combo(self)
+        self.combo_rate_dis.grid(row=2, column=1,
+                columnspan=4,
+                sticky=W, padx=10)
+
+        btn_cancel = ttk.Button(self, text='Закрыть', command=self.destroy)
+        btn_cancel.grid(row=5, column=5,
+                sticky=W, padx=5, pady=10)  
+
+        self.btn_ok = ttk.Button(self, text='Добавить')
+        self.btn_ok.grid(row=5, column=1,
+                sticky=W, padx=5, pady=10)   
+        self.btn_ok.bind('<Button-1>', lambda event: Main.insert_rate(self, self.entry_rate_max.get(),
+                                                                       self.entry_rate_current.get(),
+                                                                       self.combo_rate_name.get(),
+                                                                       self.combo_rate_dis.get()))
+
+        
+        self.btn_edit = ttk.Button(self, text='Редактировать')
+        self.btn_edit.grid(row=5, column=0,
+                sticky=W, padx=5, pady=10)  
+        self.btn_edit.bind('<Button-1>', lambda event: Main.update_rate(self, self.entry_rate_max.get(),
+                                                                       self.entry_rate_current.get(),
+                                                                       self.combo_rate_name.get(),
+                                                                       self.combo_rate_dis.get()))
+
+
+
+        self.tree = ttk.Treeview(self, columns=('rate_id', 'rate_max', 'rate_fact', 'std_id', 'pred_id'), show='headings')
+        self.tree.column('rate_id', width=20, anchor=tk.CENTER)
+        self.tree.column('rate_max', width=100, anchor=tk.CENTER)
+        self.tree.column('rate_fact', width=100, anchor=tk.CENTER)
+        self.tree.column('std_id', width=160, anchor=tk.CENTER)
+        self.tree.column('pred_id', width=100, anchor=tk.CENTER)
+
+        self.tree.heading('rate_id', text='ID')
+        self.tree.heading('rate_max', text='Макс.рейтинг')
+        self.tree.heading('rate_fact', text='Факт.рейтинг')
+        self.tree.heading('std_id', text='ФИО')
+        self.tree.heading('pred_id', text='Дисциплина')
+
+        self.tree.grid(row=6, column=0, columnspan=6,
+                sticky='news', padx=5, pady=10)  
+
+        vsb = tk.Scrollbar(self, orient="vertical", command=self.tree.yview)
+        vsb.grid(row=6, column=6, sticky='ns')
+        self.tree.configure(yscrollcommand=vsb.set)
+      
+        refreshdata()
+
+        def selectItem(a):
+            curItem = self.tree.focus()
+            self.entry_rate_max.delete(0, END)
+            self.entry_rate_max.insert(0, self.tree.set(curItem, 'rate_max'))
+            self.entry_rate_current.delete(0, END)
+            self.entry_rate_current.insert(0, self.tree.set(curItem, 'rate_fact'))
+            self.combo_rate_name.delete(0, END)
+            self.combo_rate_name.insert(0, self.tree.set(curItem, 'std_id'))
+            self.combo_rate_dis.delete(0, END)
+            self.combo_rate_dis.insert(0, self.tree.set(curItem, 'pred_id'))
+            self.entry_ratesel_pos.delete(0, END)
+   
+            try:
+                valtochk = self.tree.set(curItem, 'rate_id')
+                int(valtochk)
+                self.entry_ratesel_pos.insert(0, self.tree.set(curItem, 'rate_id'))
+            except ValueError:
+                    ctypes.windll.user32.MessageBoxW(0, "Значение номера позиции не является числом", "Ошибка", 1)
+                    self.entry_ratesel_pos.insert(0, 1)
+            
+        #устанавливаем курсор в сетке на первую позицию
+        try:
+            child_id = self.tree.get_children()[0] # для ссылки на последний элемент в наборе
+            self.tree.focus(child_id)
+            self.tree.selection_set(child_id)
+            selectItem(0)
+        except:
+            ctypes.windll.user32.MessageBoxW(0, "Нет строк в таблице", "Ошибка", 1)
+       
+        self.btn_del = ttk.Button(self, text='Удалить')
+        self.btn_del.grid(row=5, column=4,
+                sticky=W, padx=5, pady=10)  
+ 
+        self.btn_del.bind('<Button-1>', lambda event: Main.delete_rate(self, self.entry_ratesel_pos.get()))
+
+        self.tree.bind('<ButtonRelease-1>', selectItem)
+
+        self.focus_set()
+
+
+   #создание формы для работы таблицей faculty
+    def new_window_fac():
+        self = tk.Toplevel(root)
+        self.title('Таблица faculty')
+        self.geometry('480x360+200+100')
+        self.resizable(False, False)
+ 
+        def refreshdata():
+            db.c.execute('''SELECT * FROM faculty''')
+            [self.tree.delete(i) for i in self.tree.get_children()]
+            [self.tree.insert('', 'end', values=row) for row in db.c.fetchall()]
+
+        label_id_pos = tk.Label(self, text='Позиция:')
+        label_id_pos.grid(row=0, column=0,
+                sticky=W, padx=10)
+
+        label_description = tk.Label(self, text='Название:')
+        label_description.grid(row=1, column=0,
+                sticky=W, padx=10)
+
+        self.entry_facsel_pos = ttk.Entry(self)
+        self.entry_facsel_pos.grid(row=0, column=1,
+                columnspan=4,
+                sticky=W, padx=10)
+
+        self.entry_fac_name = ttk.Entry(self)
+        self.entry_fac_name.grid(row=1, column=1,
+                sticky=W, padx=10)
+
+        btn_cancel = ttk.Button(self, text='Закрыть', command=self.destroy)
+        btn_cancel.grid(row=5, column=5,
+                sticky=W, padx=5, pady=10)  
+
+        self.btn_ok = ttk.Button(self, text='Добавить')
+        self.btn_ok.grid(row=5, column=1,
+                sticky=W, padx=5, pady=10)   
+        self.btn_ok.bind('<Button-1>', lambda event: Main.insert_fac(self, self.entry_fac_name.get()))
+
+        
+        self.btn_edit = ttk.Button(self, text='Редактировать')
+        self.btn_edit.grid(row=5, column=0,
+                sticky=W, padx=5, pady=10)  
+        self.btn_edit.bind('<Button-1>', lambda event: Main.update_fac(self, self.entry_fac_name.get()))
+
+
+        self.tree = ttk.Treeview(self, columns=('fac_id', 'fac_name'), show='headings')
+        self.tree.column('fac_id', width=20, anchor=tk.CENTER)
+        self.tree.column('fac_name', width=200, anchor=tk.CENTER)
+
+        self.tree.heading('fac_id', text='ID')
+        self.tree.heading('fac_name', text='Название факультета')
+
+        self.tree.grid(row=6, column=0, columnspan=6,
+                sticky='news', padx=5, pady=10)  
+
+        vsb = tk.Scrollbar(self, orient="vertical", command=self.tree.yview)
+        vsb.grid(row=6, column=6, sticky='ns')
+        self.tree.configure(yscrollcommand=vsb.set)
+      
+        refreshdata()
+
+        def selectItem(a):
+            curItem = self.tree.focus()
+            self.entry_fac_name.delete(0, END)
+            self.entry_fac_name.insert(0, self.tree.set(curItem, 'fac_name'))
+            self.entry_facsel_pos.delete(0, END)
+   
+            try:
+                valtochk = self.tree.set(curItem, 'fac_id')
+                int(valtochk)
+                self.entry_facsel_pos.insert(0, self.tree.set(curItem, 'fac_id'))
+            except ValueError:
+                    ctypes.windll.user32.MessageBoxW(0, "Значение номера позиции не является числом", "Ошибка", 1)
+                    self.entry_facsel_pos.insert(0, 1)
+            
+        #устанавливаем курсор в сетке на первую позицию
+        try:
+            child_id = self.tree.get_children()[0] # для ссылки на последний элемент в наборе
+            self.tree.focus(child_id)
+            self.tree.selection_set(child_id)
+            selectItem(0)
+        except:
+            ctypes.windll.user32.MessageBoxW(0, "Нет строк в таблице", "Ошибка", 1)
+       
+        self.btn_del = ttk.Button(self, text='Удалить')
+        self.btn_del.grid(row=5, column=4,
+                sticky=W, padx=5, pady=10)  
+ 
+        self.btn_del.bind('<Button-1>', lambda event: Main.delete_fac(self, self.entry_facsel_pos.get()))
+
+        self.tree.bind('<ButtonRelease-1>', selectItem)
+
+        self.focus_set()
+
+#-----
+  #создание формы для работы таблицей grups
+    def new_window_grup():
+        self = tk.Toplevel(root)
+        self.title('Таблица grups')
+        self.geometry('510x410+200+100')
+        self.resizable(False, False)
+ 
+        def refreshdata():
+           db.c.execute('''SELECT grup_id, date_create, t2.fac_name AS fac_name FROM grups, faculty t2 WHERE grups.fac_id = t2.fac_id''')
+           [self.tree.delete(i) for i in self.tree.get_children()]
+           [self.tree.insert('', 'end', values=row) for row in db.c.fetchall()]
+
+        label_id_pos = tk.Label(self, text='Позиция:')
+        label_id_pos.grid(row=0, column=0,
+                sticky=W, padx=10)
+
+        label_description = tk.Label(self, text='Дата создания:')
+        label_description.grid(row=1, column=0,
+                sticky=W, padx=10)
+        
+        label_fac = tk.Label(self, text='Факультет:')
+        label_fac.grid(row=2, column=0,
+                sticky=W, padx=10)
+
+        self.entry_grsel_pos = ttk.Entry(self)
+        self.entry_grsel_pos.grid(row=0, column=1,
+                columnspan=4,
+                sticky=W, padx=10)
+
+        self.entry_date_create = ttk.Entry(self)
+        self.entry_date_create.grid(row=1, column=1,
+                sticky=W, padx=10)
+
+                #создание списка с предопределенными значениями
+        self.combo_grup_name = ttk.Combobox(self)
+        Main.change_grup_combo_name(self)
+        self.combo_grup_name.grid(row=2, column=1,
+                columnspan=4,
+                sticky=W, padx=10) 
+
+        btn_cancel = ttk.Button(self, text='Закрыть', command=self.destroy)
+        btn_cancel.grid(row=5, column=5,
+                sticky=W, padx=5, pady=10)  
+
+        self.btn_ok = ttk.Button(self, text='Добавить')
+        self.btn_ok.grid(row=5, column=1,
+                sticky=W, padx=5, pady=10)   
+        self.btn_ok.bind('<Button-1>', lambda event: Main.insert_grup(self, self.entry_date_create.get(),
+                                                                        self.combo_grup_name.get()))
+
+        
+        self.btn_edit = ttk.Button(self, text='Редактировать')
+        self.btn_edit.grid(row=5, column=0,
+                sticky=W, padx=5, pady=10)  
+        self.btn_edit.bind('<Button-1>', lambda event: Main.update_grup(self, self.entry_date_create.get(),
+                                                                        self.combo_grup_name.get()))
+
+        self.tree = ttk.Treeview(self, columns=('grup_id', 'date_create', 'fac_id'), show='headings')
+        self.tree.column('grup_id', width=20, anchor=tk.CENTER)
+        self.tree.column('date_create', width=200, anchor=tk.CENTER)
+        self.tree.column('fac_id', width=100, anchor=tk.CENTER)
+
+        self.tree.heading('grup_id', text='ID')
+        self.tree.heading('date_create', text='Дата создания')
+        self.tree.heading('fac_id', text='Факультет')
+
+        self.tree.grid(row=6, column=0, columnspan=6,
+                sticky='news', padx=5, pady=10)  
+
+        vsb = tk.Scrollbar(self, orient="vertical", command=self.tree.yview)
+        vsb.grid(row=6, column=6, sticky='ns')
+        self.tree.configure(yscrollcommand=vsb.set)
+      
+        refreshdata()
+
+        def selectItem(a):
+            curItem = self.tree.focus()
+            self.entry_date_create.delete(0, END)
+            self.entry_date_create.insert(0, self.tree.set(curItem, 'date_create'))
+            self.combo_grup_name.delete(0, END)
+            self.combo_grup_name.insert(0, self.tree.set(curItem, 'fac_id'))
+            self.entry_grsel_pos.delete(0, END)
+   
+            try:
+                valtochk = self.tree.set(curItem, 'grup_id')
+                int(valtochk)
+                self.entry_grsel_pos.insert(0, self.tree.set(curItem, 'grup_id'))
+            except ValueError:
+                    ctypes.windll.user32.MessageBoxW(0, "Значение номера позиции не является числом", "Ошибка", 1)
+                    self.entry_grsel_pos.insert(0, 1)
+            
+        #устанавливаем курсор в сетке на первую позицию
+        try:
+            child_id = self.tree.get_children()[0] # для ссылки на последний элемент в наборе
+            self.tree.focus(child_id)
+            self.tree.selection_set(child_id)
+            selectItem(0)
+        except:
+            ctypes.windll.user32.MessageBoxW(0, "Нет строк в таблице", "Ошибка", 1)
+       
+        self.btn_del = ttk.Button(self, text='Удалить')
+        self.btn_del.grid(row=5, column=4,
+                sticky=W, padx=5, pady=10)  
+ 
+        self.btn_del.bind('<Button-1>', lambda event: Main.delete_grup(self, self.entry_grsel_pos.get()))
+
+        self.tree.bind('<ButtonRelease-1>', selectItem)
+#-----
+    #вызов функции создания формы для работы с таблицей students
+    def open_dialog(self):
+        Main.new_window_stud()
+    #вызов функции создания формы для работы с таблицей predmets
+    def open_dialog_pred(self):
+        Main.new_window_pred()
+    #вызов функции создания формы для работы с таблицей rate
+    def open_dialog_rate(self):
+        Main.new_window_rate()
+    #вызов функции создания формы для работы с таблицей faculty
+    def open_dialog_fac(self):
+        Main.new_window_fac()
+    #вызов функции создания формы для работы с таблицей prepods
+    def open_dialog_prep(self):
+        Main.new_window_prep()
+    #вызов функции создания формы для работы с таблицей grups
+    def open_dialog_grup(self):
+        Main.new_window_grup()
+#задание класса базы данных
+class DB:
+    #конструктор
+    def __init__(self):
+        #подключаем базу
+        self.conn = sqlite3.connect('u4eba.db')
+        self.c = self.conn.cursor()
+        #если еще не существует, создаем таблицу students
+        self.c.execute(
+            '''CREATE TABLE IF NOT EXISTS students (std_id integer primary key, std_name text, std_adress text, std_addition text, std_kurs text, grup_id integer)''')
+        #выполняем транзакцию
+        self.conn.commit()
+        #если еще не существует, создаем таблицу predmets
+        self.c.execute(
+            '''CREATE TABLE IF NOT EXISTS predmets (pred_id integer primary key, pred_name text, pred_kurs text)''')
+        self.conn.commit()
+        #если еще не существует, создаем таблицу rate
+        self.c.execute(
+            '''CREATE TABLE IF NOT EXISTS rate (rate_id integer primary key, rate_max text, rate_fact text, std_id integer, pred_id integer)''')
+        self.conn.commit()
+        #если еще не существует, создаем таблицу faculty
+        self.c.execute(
+            '''CREATE TABLE IF NOT EXISTS faculty (fac_id integer primary key, fac_name text)''')
+        self.conn.commit()
+        #если еще не существует, создаем таблицу prepods
+        self.c.execute(
+            '''CREATE TABLE IF NOT EXISTS prepods (prep_id integer primary key, prep_name text, prep_adress text, prep_persinf text, prep_inn text, fac_id integer)''')
+        self.conn.commit()
+        #если еще не существует, создаем таблицу grups
+        self.c.execute(
+            '''CREATE TABLE IF NOT EXISTS grups (grup_id integer primary key, date_create text, fac_id integer)''')
+        self.conn.commit()
+    #функция по вставке значений в таблицу students
+    def insert_data_stud(self, std_name, std_adress, std_addition, std_kurs, grup_id):
+        self.c.execute('''INSERT INTO students(std_name, std_adress, std_addition, std_kurs, grup_id) VALUES (?, ?, ?, ?, ?)''',
+                       (std_name, std_adress, std_addition, std_kurs, grup_id))
+        self.conn.commit()
+    #функция по вставке значений в таблицу predmets
+    def insert_data_pred(self, pred_name, pred_kurs):
+        self.c.execute('''INSERT INTO predmets(pred_name, pred_kurs) VALUES (?, ?)''',
+                       (pred_name, pred_kurs))
+        self.conn.commit()
+    #функция по вставке значений в таблицу rate
+    def insert_data_rate(self, rate_max, rate_fact, std_id, pred_id):
+        self.c.execute('''INSERT INTO rate(rate_max, rate_fact, std_id, pred_id) VALUES (?, ?, ?, ?)''',
+                       (rate_max, rate_fact, std_id, pred_id))
+        self.conn.commit()
+    #функция по вставке значений в таблицу grups
+    def insert_data_grup(self, date_create, fac_id):
+        self.c.execute('''INSERT INTO grups(date_create, fac_id) VALUES (?, ?)''',
+                       (date_create, fac_id))
+        self.conn.commit()
+    #функция по вставке значений в таблицу faculty
+    def insert_data_fac(self, fac_name):
+        self.c.execute('''INSERT INTO faculty(fac_name) VALUES (?)''',
+                       (fac_name,))
+        self.conn.commit()
+    #функция по вставке значений в таблицу prepods
+    def insert_data_prep(self, prep_name, prep_adress, prep_persinf, prep_inn, fac_id):
+        self.c.execute('''INSERT INTO prepods(prep_name, prep_adress, prep_persinf, prep_inn, fac_id) VALUES (?, ?, ?, ?, ?)''',
+                       (prep_name, prep_adress, prep_persinf, prep_inn, fac_id))
+        self.conn.commit()
+
+#Когда интерпретатор Python читает исходный файл, он исполняет весь найденный в нем код. 
+# Перед тем, как начать выполнять команды, он определяет несколько специальных переменных. 
+# Например, если интерпретатор запускает некоторый модуль (исходный файл) как основную программу, 
+# он присваивает специальной переменной __name__ значение "__main__". 
+# Одна из причин делать именно так – тот факт, что иногда вы пишете модуль (файл с расширением .py), 
+# предназначенный для непосредственного исполнения. Кроме того, он также может быть импортирован и 
+# использован из другого модуля. Производя подобную проверку, вы можете сделать так, что код будет 
+# исполняться только при условии, что данный модуль запущен как программа, и запретить исполнять его, 
+# если его хотят импортировать и использовать функции модуля отдельно.
+if __name__ == "__main__":
+    #создание основных классов
+    root = tk.Tk()
+    db = DB()
+    #создание основной формы приложения
+    app = Main(root)
+    app.pack()
+    root.title("Учеба в вузе")
+    root.geometry("470x170+300+200")
+    root.resizable(False, False)
+    #зацикливаем выполнение программы
+    root.mainloop()
